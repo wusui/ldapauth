@@ -55,14 +55,11 @@ class CBT(Task):
             benchmark_config['cosbench']['cosbench_dir'] = os.path.join(testdir, 'cos')
             benchmark_config['cosbench']['cosbench_xml_dir'] = os.path.join(testdir, 'xml')
             self.ctx.cluster.run(args=['mkdir', '-p', '-m0755', '--', benchmark_config['cosbench']['cosbench_xml_dir']])
-            benchmark_config['cosbench']['controller'] = osd_hosts[0]
+            benchmark_config['cosbench']['controller'] = self.first_mon.hostname
 
-            # set auth details
-            remotes_and_roles = self.ctx.cluster.remotes.items()
-            ips = [host for (host, port) in
-                   (remote.ssh.get_transport().getpeername() for (remote, role_list) in remotes_and_roles)]
-            benchmark_config['cosbench']['auth'] = "username=cosbench:operator;password=intel2012;url=http://%s:7280/auth/v1.0;retry=9" %(ips[0])
-
+            # set auth details using first client
+            clients = [r.hostname for r in self.ctx.cluster.only(misc.is_type('client')).remotes.keys()]
+            benchmark_config['cosbench']['auth'] = "username=cosbench:operator;password=intel2012;url=http://%s:7280/auth/v1.0;retry=9" % (clients[0])
         return dict(
             cluster=cluster_config,
             benchmarks=benchmark_config,
