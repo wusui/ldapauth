@@ -439,11 +439,7 @@ add_library(rados_snap_set_diff_obj OBJECT librados/snap_set_diff.cc)
 
 add_subdirectory(include)
 add_subdirectory(librados)
-
-option(WITH_LIBRADOSSTRIPER "build with libradosstriper support" ON)
-if(WITH_LIBRADOSSTRIPER)
-  add_subdirectory(libradosstriper)
-endif()
+add_subdirectory(libradosstriper)
 
 if(WITH_MGR)
   add_subdirectory(mgr)
