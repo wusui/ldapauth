@@ -58,15 +58,13 @@ def task(ctx, config):
     else:
         install_cmd = ['sudo', 'apt-get', '-y', 'install', 'ldap-utils']
         client.run(args=install_cmd)
-        client.run(args=['sudo', 'apt-get', 'install', 'python-boto', '-y'])    
+        client.run(args=['sudo', 'apt-get', 'install', 'python-boto', '-y'])
+    client.run(args=['sudo', 'pip', 'install', '-U', 'boto'])
 
     ldap_server_task = get_task_site(ctx, 'ldap_server')
     server_site = get_node_name(ctx, ldap_server_task)
     ldap_client_task = get_task_site(ctx, 'ldap_client')
     client_site = get_node_name(ctx, ldap_client_task)
-    log.info('==============================================')
-    log.info(server_site)
-    log.info('==============================================')
 
     client.run(args=['sudo', 'useradd', 'rgw'])
     client.run(args=['echo', 't0pSecret\nt0pSecret', run.Raw('|'), 'sudo',
@@ -76,10 +74,11 @@ def task(ctx, config):
                      'passwd', 'newuser'])
 
     new_globals = ctx.ceph['ceph'].conf['global']
+    new_globals.update({'rgw_frontends': "civetweb port=7280"})
     new_globals.update({'rgw_ldap_secret': '/etc/bindpass'})
     new_globals.update({'rgw_ldap_uri': 'ldap://%s:389' % server_site})
-    new_globals.update({'rgw_ldap_binddn': 'uid=rgw,cn=users,cn=accounts,dc=ceph,dc=redhat,dc=com'})
-    new_globals.update({'rgw_ldap_searchdn': 'cn=users,cn=accounts,dc=ceph,dc=redhat,dc=com'})
+    new_globals.update({'rgw_ldap_binddn': 'uid=ceph,cn=users,cn=accounts,dc=front,dc=sepia,dc=ceph,dc=com'})
+    new_globals.update({'rgw_ldap_searchdn': 'cn=users,cn=accounts,dc=front,dc=sepia,dc=ceph,dc=com'})
     new_globals.update({'rgw_ldap_dnattr': 'uid'})
     new_globals.update({'rgw_s3_auth_use_ldap': 'true'})
     new_globals.update({'debug rgw': '20'})
@@ -90,4 +89,4 @@ def task(ctx, config):
     tbindpass = 't0pSecret'
     for remote in ctx.cluster.remotes:
         misc.sudo_write_file(remote, '/etc/ceph/ceph.conf', confstr, perms='0644', owner='root:root')
-        misc.sudo_write_file(remote, '/etc/bindpass', tbindpass, perms='0600', owner='rgw:rgw')
+        misc.sudo_write_file(remote, '/etc/bindpass', tbindpass, perms='0600', owner='ceph:ceph')

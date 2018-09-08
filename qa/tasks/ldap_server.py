@@ -39,7 +39,7 @@ def task(ctx, config):
     client.run(args=['sudo',
                 'ipa-server-install',
                 '--realm',
-                'ceph.redhat.com',
+                'front.sepia.ceph.com',
                 '--ds-password',
                 't0pSecret',
                 '--admin-password',
@@ -53,8 +53,17 @@ def task(ctx, config):
                      'admin'])
     client.run(args=['ipa', 'user-add', 'rgw',
                      '--first', 'rados', '--last', 'gateway'])
+    client.run(args=['ipa', 'user-add', 'ceph',
+                     '--first', 'rados', '--last', 'gateway'])
     client.run(args=['ipa', 'user-add', 'newuser',
                      '--first', 'new', '--last', 'user'])
+    client.run(args=['echo',
+                     't0pSecret\nt0pSecret',
+                     run.Raw('|'),
+                     'ipa', 
+                     'user-mod',
+                     'ceph',
+                     '--password'])
     client.run(args=['echo',
                      't0pSecret\nt0pSecret',
                      run.Raw('|'),
@@ -65,7 +74,7 @@ def task(ctx, config):
     client.run(args=['echo',
                      't0pSecret\nt0pSecret',
                      run.Raw('|'),
-                     'ipa', 
+                     'ipa',
                      'user-mod',
                      'newuser',
                      '--password'])
