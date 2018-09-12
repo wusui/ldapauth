@@ -65,19 +65,18 @@ def task(ctx, config):
     server_site = get_node_name(ctx, ldap_server_task)
     ldap_client_task = get_task_site(ctx, 'ldap_client')
     client_site = get_node_name(ctx, ldap_client_task)
-
-    client.run(args=['sudo', 'useradd', 'rgw'])
-    client.run(args=['echo', 't0pSecret\nt0pSecret', run.Raw('|'), 'sudo',
-                     'passwd', 'rgw'])
-    client.run(args=['sudo', 'useradd', 'newuser'])
-    client.run(args=['echo', 't0pSecret\nt0pSecret', run.Raw('|'), 'sudo',
-                     'passwd', 'newuser'])
+    #client.run(args=['sudo', 'useradd', 'rgw'])
+    #client.run(args=['echo', 't0pSecret\nt0pSecret', run.Raw('|'), 'sudo',
+    #                 'passwd', 'rgw'])
+    #client.run(args=['sudo', 'useradd', 'newuser'])
+    #client.run(args=['echo', 't0pSecret\nt0pSecret', run.Raw('|'), 'sudo',
+    #                 'passwd', 'newuser'])
 
     new_globals = ctx.ceph['ceph'].conf['global']
-    new_globals.update({'rgw_frontends': "civetweb port=7280"})
+    #new_globals.update({'rgw_frontends': '"civetweb port=7280"'})
     new_globals.update({'rgw_ldap_secret': '/etc/bindpass'})
     new_globals.update({'rgw_ldap_uri': 'ldap://%s:389' % server_site})
-    new_globals.update({'rgw_ldap_binddn': 'uid=ceph,cn=users,cn=accounts,dc=front,dc=sepia,dc=ceph,dc=com'})
+    new_globals.update({'rgw_ldap_binddn': 'uid=rgw,cn=users,cn=accounts,dc=front,dc=sepia,dc=ceph,dc=com'})
     new_globals.update({'rgw_ldap_searchdn': 'cn=users,cn=accounts,dc=front,dc=sepia,dc=ceph,dc=com'})
     new_globals.update({'rgw_ldap_dnattr': 'uid'})
     new_globals.update({'rgw_s3_auth_use_ldap': 'true'})
@@ -90,3 +89,8 @@ def task(ctx, config):
     for remote in ctx.cluster.remotes:
         misc.sudo_write_file(remote, '/etc/ceph/ceph.conf', confstr, perms='0644', owner='root:root')
         misc.sudo_write_file(remote, '/etc/bindpass', tbindpass, perms='0600', owner='ceph:ceph')
+    iyam = client.name.split('@')[-1].split('.')[0]
+    if misc.get_system_type(client) == 'rpm':
+        client.run(args=['sudo', 'systemctl', 'restart', 'ceph-radosgw@rgw.%s' % iyam])
+    else:
+        client.run(args=['sudo', 'service', 'radosgw', 'restart', 'id=rgw.%s' % iyam])

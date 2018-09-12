@@ -53,17 +53,17 @@ def task(ctx, config):
                      'admin'])
     client.run(args=['ipa', 'user-add', 'rgw',
                      '--first', 'rados', '--last', 'gateway'])
-    client.run(args=['ipa', 'user-add', 'ceph',
-                     '--first', 'rados', '--last', 'gateway'])
-    client.run(args=['ipa', 'user-add', 'newuser',
+    #client.run(args=['ipa', 'user-add', 'ceph',
+    #                 '--first', 'rados', '--last', 'gateway'])
+    client.run(args=['ipa', 'user-add', 'testuser',
                      '--first', 'new', '--last', 'user'])
-    client.run(args=['echo',
-                     't0pSecret\nt0pSecret',
-                     run.Raw('|'),
-                     'ipa', 
-                     'user-mod',
-                     'ceph',
-                     '--password'])
+    #client.run(args=['echo',
+    #                 't0pSecret\nt0pSecret',
+    #                 run.Raw('|'),
+    #                 'ipa', 
+    #                 'user-mod',
+    #                 'ceph',
+    #                 '--password'])
     client.run(args=['echo',
                      't0pSecret\nt0pSecret',
                      run.Raw('|'),
@@ -76,11 +76,11 @@ def task(ctx, config):
                      run.Raw('|'),
                      'ipa',
                      'user-mod',
-                     'newuser',
+                     'testuser',
                      '--password'])
-    #client.run(args=['sudo', 'useradd', 'rgw'])
+    #client.run(args=['sudo', 'useradd', 'ceph'])
     #client.run(args=['echo', 't0pSecret\nt0pSecret', run.Raw('|'), 'sudo',
-    #                 'passwd', 'rgw'])
-    #client.run(args=['sudo', 'useradd', 'newuser'])
+    #                 'passwd', 'ceph'])
+    #client.run(args=['sudo', 'useradd', 'testuser'])
     #client.run(args=['echo', 't0pSecret\nt0pSecret', run.Raw('|'), 'sudo',
-    #                 'passwd', 'newuser'])
+    #                 'passwd', 'testuser'])
