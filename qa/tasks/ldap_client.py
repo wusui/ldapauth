@@ -1,7 +1,8 @@
 """
-ldap_server
+ldap_client
 """
 import logging
+import contextlib
 import time
 
 from teuthology.orchestra import run
@@ -21,7 +22,7 @@ def get_node_name(ctx, this_task):
 
 def get_task_site(ctx, taskname):
     """
-    Given a taskname ('ldap_server' for example), return the associated
+    Given a taskname ('ldap_client' for example), return the associated
     teuthology location that that task is running on ('client.1' for example)
     """
     for tentry in ctx.config['tasks']:
@@ -37,6 +38,14 @@ def fix_yum_boto(client):
     client.run(args=['sudo', 'yum', '-y', 'install', 'python-boto'])
     client.run(args=['sudo', 'yum-config-manager', '--disable', 'epel'])
 
+def get_dc_path(path):
+    dcvals = path.split('.')[1:]
+    out_str = []
+    for path_part in dcvals:
+        out_str.append('dc=%s' % path_part)
+    return (','.join(out_str))
+
+@contextlib.contextmanager
 def task(ctx, config):
     """
     Install ldap_client in order to test ldap rgw authentication 
@@ -72,12 +81,13 @@ def task(ctx, config):
     #client.run(args=['echo', 't0pSecret\nt0pSecret', run.Raw('|'), 'sudo',
     #                 'passwd', 'newuser'])
 
+    dc_splits = get_dc_path(ctx.cluster.remotes.keys()[0].name)
     new_globals = ctx.ceph['ceph'].conf['global']
     #new_globals.update({'rgw_frontends': '"civetweb port=7280"'})
     new_globals.update({'rgw_ldap_secret': '/etc/bindpass'})
     new_globals.update({'rgw_ldap_uri': 'ldap://%s:389' % server_site})
-    new_globals.update({'rgw_ldap_binddn': 'uid=rgw,cn=users,cn=accounts,dc=front,dc=sepia,dc=ceph,dc=com'})
-    new_globals.update({'rgw_ldap_searchdn': 'cn=users,cn=accounts,dc=front,dc=sepia,dc=ceph,dc=com'})
+    new_globals.update({'rgw_ldap_binddn': 'uid=rgw,cn=users,cn=accounts,%s' % dc_splits})
+    new_globals.update({'rgw_ldap_searchdn': 'cn=users,cn=accounts,%s' % dc_splits})
     new_globals.update({'rgw_ldap_dnattr': 'uid'})
     new_globals.update({'rgw_s3_auth_use_ldap': 'true'})
     new_globals.update({'debug rgw': '20'})
@@ -94,3 +104,8 @@ def task(ctx, config):
         client.run(args=['sudo', 'systemctl', 'restart', 'ceph-radosgw@rgw.%s' % iyam])
     else:
         client.run(args=['sudo', 'service', 'radosgw', 'restart', 'id=rgw.%s' % iyam])
+    # TO DO: ADD STUFF THAT DOES NOT WORK YET HERE
+    try:
+        yield
+    finally:
+        pass
