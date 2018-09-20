@@ -45,6 +45,48 @@ def get_dc_path(path):
         out_str.append('dc=%s' % path_part)
     return (','.join(out_str))
 
+def test_client(client, testdir):
+    client.run(args=['sudo',
+                     'RGW_ACCESS_KEY_ID=testuser',
+                     'RGW_SECRET_ACCESS_KEY=t0pSecret',
+                     'radosgw-token',
+                     '--encode',
+                     '--ttype=ldap',
+                     run.Raw('>'),
+                     '%s/ldap_access_key' % testdir])
+    create_bucket = """
+#!/usr/bin/env python
+import boto
+import boto.s3.connection
+with open("/tmp/ldap_access_key") as f_ldap_access:
+    access_key = f_ldap_access.read().strip()
+boto.config.add_section('s3')
+boto.config.set('s3', 'use-sigv2', 'True')
+conn = boto.connect_s3(
+    aws_access_key_id = access_key,
+    aws_secret_access_key = "",
+    host = "%s",
+    port = 7280,
+    is_secure=False,
+    calling_format = boto.s3.connection.OrdinaryCallingFormat(),
+    )
+
+bucket = conn.create_bucket('testuser-new-bucket')
+for bucket in conn.get_all_buckets():
+    print "{name}\t{created}".format(
+        name = bucket.name,
+        created = bucket.creation_date,
+)
+= """ % client.hostname
+    py_bucket_file = '{testdir}/create_bucket.py'.format(testdir=testdir)
+    misc.sudo_write_file(
+        remote=client,
+        path=py_bucket_file,
+        data=create_bucket,
+        perms='0744',
+        )
+    # client.run(args=['python', '%s/create_bucket.py' % testdir, run.Raw('>'), '%s/ldapbucketout' % testdir])
+
 @contextlib.contextmanager
 def task(ctx, config):
     """
@@ -106,6 +148,7 @@ def task(ctx, config):
         client.run(args=['sudo', 'service', 'radosgw', 'restart', 'id=rgw.%s' % iyam])
     # TO DO: ADD STUFF THAT DOES NOT WORK YET HERE
     try:
+        test_client(client, '/tmp')
         yield
     finally:
         pass
