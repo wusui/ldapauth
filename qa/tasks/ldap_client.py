@@ -146,9 +146,7 @@ def task(ctx, config):
         client.run(args=['sudo', 'systemctl', 'restart', 'ceph-radosgw@rgw.%s' % iyam])
     else:
         client.run(args=['sudo', 'service', 'radosgw', 'restart', 'id=rgw.%s' % iyam])
-    # TO DO: ADD STUFF THAT DOES NOT WORK YET HERE
     try:
-        test_client(client, '/tmp')
         yield
     finally:
         pass
